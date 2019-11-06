@@ -27,18 +27,17 @@ import webscraber.TagCounterCallable;
 public class WebScraperResource {
 
     @GET
-        @Produces(MediaType.APPLICATION_JSON)
-        @Path("tags1")
-        public String getTags() {
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("tags_simple")
+    public String getTags() {
         return makeResponse();
     }
 
     private String makeResponse() {
         return "{\"todo\":\"Make me return the calculated values from the external requests\"}";
     }
-    
-    //Green (Yellow) Students can stop here, and just use the two methods given above this line
 
+    //Green (Yellow) Students can stop here, and just use the two methods given above
     //Examples to inspire Red (Yellow) students in how to use the async API
     @GET
     @Produces(MediaType.APPLICATION_JSON)
@@ -71,13 +70,15 @@ public class WebScraperResource {
     }
 
     @GET
-        @Produces(MediaType.APPLICATION_JSON)
-        @Path("tags")
-        public void getTags(@Suspended
-        final AsyncResponse asyncResponse) {
-        asyncResponse.resume(makeResponse());
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("tags")
+    public void getTags(@Suspended final AsyncResponse ar) {
+         new Thread(() -> {
+            String result = makeResponse();
+            ar.resume(result);
+        }).start();
     }
-        
+
     private String expensiveOperation(int delay) {
         try {
             Thread.sleep(delay); //Simulates a long running process
