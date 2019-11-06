@@ -26,84 +26,65 @@ import webscraber.TagCounterCallable;
 @Path("scrape")
 public class WebScraperResource {
 
-  @Context
-  private UriInfo context;
+    @GET
+        @Produces(MediaType.APPLICATION_JSON)
+        @Path("tags1")
+        public String getTags() {
+        return makeResponse();
+    }
 
-  public WebScraperResource() {
-  }
+    private String makeResponse() {
+        return "{\"todo\":\"Make me return the calculated values from the external requests\"}";
+    }
+    
+    //Green (Yellow) Students can stop here, and just use the two methods given above this line
 
-  @GET
-  @Produces(MediaType.APPLICATION_JSON)
-  @Path("slow")
-  public void getAllOrders(@Suspended final AsyncResponse ar) {
+    //Examples to inspire Red (Yellow) students in how to use the async API
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("slow")
+    public void slow(@Suspended final AsyncResponse ar) {
+        new Thread(() -> {
+            String result = expensiveOperation(2000);
+            ar.resume(result);
+        }).start();
+    }
 
-    ExecutorService es = Executors.newSingleThreadExecutor();
-    es.submit(new Runnable() {
-      @Override
-      public void run() {
+    @GET
+    @Path("veryslow")
+    @Produces(MediaType.APPLICATION_JSON)
+
+    public void asyncGetWithTimeout(@Suspended final AsyncResponse ar) {
+        ar.setTimeoutHandler(new TimeoutHandler() {
+            @Override
+            public void handleTimeout(AsyncResponse asyncResponse) {
+                asyncResponse.resume(Response.status(Response.Status.SERVICE_UNAVAILABLE)
+                        .entity("{\"msg\":\"Operation timeout - Shit happens ;-)\"}").build());
+            }
+        });
+        ar.setTimeout(5, TimeUnit.SECONDS);
+
+        new Thread(() -> {
+            String result = expensiveOperation(6000);
+            ar.resume(result);
+        }).start();
+    }
+
+    @GET
+        @Produces(MediaType.APPLICATION_JSON)
+        @Path("tags")
+        public void getTags(@Suspended
+        final AsyncResponse asyncResponse) {
+        asyncResponse.resume(makeResponse());
+    }
+        
+    private String expensiveOperation(int delay) {
         try {
-          //Simulating a long running process
-          Thread.sleep(2000);
+            Thread.sleep(delay); //Simulates a long running process
         } catch (InterruptedException e) {
-          System.out.println("UPS" + e);
+            System.out.println("UPS" + e);
         }
-        ar.resume("{\"msg\":\"This response was delayed two seconds\"}");
-        es.shutdown();
-      }
-    });
-  }
-
-  @GET
-  @Path("veryslow")
-  @Produces(MediaType.APPLICATION_JSON)
-  public void asyncGetWithTimeout(@Suspended final AsyncResponse asyncResponse) {
-    asyncResponse.setTimeoutHandler(new TimeoutHandler() {
-      @Override
-      public void handleTimeout(AsyncResponse asyncResponse) {
-        asyncResponse.resume(Response.status(Response.Status.SERVICE_UNAVAILABLE)
-                .entity("{\"msg\":\"Operation timeout - Shit happens ;-)\"}").build());
-      }
-    });
-    asyncResponse.setTimeout(5, TimeUnit.SECONDS);
-
-    new Thread(new Runnable() {
-      @Override
-      public void run() {
-        String result;
-        try {
-          result = veryExpensiveOperation();
-          asyncResponse.resume(result);
-        } catch (InterruptedException ex) {
-          Logger.getLogger(WebScraperResource.class.getName()).log(Level.SEVERE, null, ex);
-        }
-      }
-
-      private String veryExpensiveOperation() throws InterruptedException {
-        Thread.sleep(5500);
-        return "{\"msg\":\"This response was delayed two seconds\"}";
-      }
-    }).start();
-  }
-
-  @GET
-  @Produces(MediaType.APPLICATION_JSON)
-  @Path("tags")
-  public void getTags(@Suspended final AsyncResponse asyncResponse) {
-    asyncResponse.resume(makeResponse());
-  }
-  */
-  
-  
-  //If you have upgraded your Tomcat Server, remove this method and use the async version above
-  @GET
-  @Produces(MediaType.APPLICATION_JSON)
-  @Path("tags1")
-  public String getTags() {
-    return makeResponse();
-  }
-
-  private String makeResponse() {
-    return "{\"todo\":\"Make me return the calculated values from the external requests\"}";
-  }
+        return "{\"msg\":\"This response was delayed a few seconds\"}";
+    }
 
 }
